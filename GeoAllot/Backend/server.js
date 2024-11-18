@@ -6,7 +6,7 @@ const app = express();
 // Load environment variables
 require('dotenv').config();
 
-const port = process.env.PORT || 3001; // Use PORT from .env or default to 3001
+const port = process.env.PORT || 3000; // Use PORT from .env or default to 3001
 
 // Enable CORS with the environment variable (you can set specific domains or '*' for all)
 app.use(cors({
@@ -22,26 +22,33 @@ const pool = new Pool({
   port: process.env.DATABASE_PORT,
 });
 
+
 // API endpoint to fetch PostGIS data as GeoJSON
 app.get('/get-plots', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT id, name, area, ST_AsGeoJSON(geom) as geom
-      FROM demo_1
+    SELECT id, name, area, type, status, disroad, diswater, elephase, ST_AsGeoJSON(geom) as geom
+    FROM testing_data;
     `);
 
     const geojson = {
-      type: 'FeatureCollection',
-      features: result.rows.map(row => ({
-        type: 'Feature',
-        geometry: JSON.parse(row.geom),
-        properties: {
-          id: row.id,
-          name: row.name,
-          area: row.area,
-        }
-      }))
-    };
+        type: 'FeatureCollection',
+        features: result.rows.map(row => ({
+          type: 'Feature',
+          geometry: JSON.parse(row.geom),
+          properties: {
+            id: row.id,
+            name: row.name,
+            area: row.area,
+            type: row.type,
+            status: row.status,
+            disroad: row.disroad,
+            diswater: row.diswater,
+            elephase: row.elephase
+          }
+        }))
+      };
+      
 
     res.json(geojson);
   } catch (err) {
@@ -50,6 +57,9 @@ app.get('/get-plots', async (req, res) => {
   }
 });
 
+app.get('/', async(req,res)=>{
+    res.json("server is running")
+})
 // Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
