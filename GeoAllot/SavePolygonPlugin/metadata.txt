@@ -1,0 +1,9 @@
+[general]
+name=SavePolygonPlugin
+description=Save polygons drawn on the map using a POST API
+version=1.0
+qgisMinimumVersion=3.0
+author=Your Name
+email=your.email@example.com
+category=Vector
+icon=icon.png
