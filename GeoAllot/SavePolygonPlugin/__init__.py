@@ -23,7 +23,7 @@ class SavePolygonPlugin(QObject):
         self.iface.removePluginMenu("&Save Polygon Plugin", self.action)
 
     def ensure_layer_exists(self):
-        layer_name = "IndustryPlot"
+        layer_name = "Plots_Data"
         project = QgsProject.instance()
         layers = project.mapLayersByName(layer_name)
 
@@ -78,7 +78,7 @@ class SavePolygonPlugin(QObject):
 
     def save_polygon(self, feature):
         try:
-            attributes = {field.name(): feature[field.name()] for field in self.layer.fields()}
+            attributes = {field.name(): feature[field.name()].toPyObject() for field in self.layer.fields()}
             # Include 'id' field only if it has a non-null value
             if 'id' in attributes and attributes['id'] is not None:
                 attributes['id'] = feature['id']

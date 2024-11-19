@@ -80,9 +80,29 @@ app.post("/add-plot", async (req, res) => {
         elephase,
         geom,
       };
+      const geojson = {
+        type: "FeatureCollection",
+
+        features: [
+          {
+            type: "Feature",
+            geometry: newPlot.geom,
+            properties: {
+              id: newPlot.id,
+              name: newPlot.name,
+              area: newPlot.area,
+              type: newPlot.type,
+              status: newPlot.status,
+              disroad: newPlot.disroad,
+              diswater: newPlot.diswater,
+              elephase: newPlot.elephase,
+            },
+          },
+        ],
+      }
 
       // Emit the updated plot data to all connected Socket.io clients
-      io.emit("update-plot", newPlot);
+      io.emit("update-plot", geojson);
     } else {
       // Insert new plot
       result = await pool.query(

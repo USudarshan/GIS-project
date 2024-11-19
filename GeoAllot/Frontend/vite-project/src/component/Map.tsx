@@ -158,6 +158,7 @@ const MyMapComponent = () => {
     });
 
     // socket.on("update-plot", (updatedPlot) => {
+    //   console.log(updatedPlot)
     //   setPlots((prevPlots) =>
     //     prevPlots.map((plot) =>
     //       plot.properties.id === updatedPlot.id ? updatedPlot : plot

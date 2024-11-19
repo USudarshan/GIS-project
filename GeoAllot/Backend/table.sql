@@ -9,5 +9,5 @@ CREATE TABLE gis_data (
   disroad FLOAT,
   diswater FLOAT,
   elephase VARCHAR(50),
-  geom GEOMETRY(Geometry, 3857) -- This column can store both POLYGON and LINESTRING geometries with SRID 3857
+  geom GEOMETRY(Geometry, 4326) -- This column can store both POLYGON and LINESTRING geometries with SRID 3857
 );
