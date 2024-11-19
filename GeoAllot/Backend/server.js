@@ -81,8 +81,8 @@ io.on("connection", (socket) => {
         WHERE type = $1;
         `,
         [industryType]
-      );
-
+      );console.clear()
+       
       const geojson = {
         type: "FeatureCollection",
         features: result.rows.map((row) => ({
@@ -231,7 +231,7 @@ app.post("/add-plot", async (req, res) => {
         ],
       };
       // Emit the new plot data to all connected Socket.io clients
-      io.emit("new-plot", geojson);
+      io.emit("new-plots", geojson);
     }
     console.log(newPlot);
     res.json({ id: result.rows[0].id });
