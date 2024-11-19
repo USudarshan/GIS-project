@@ -1,58 +1,62 @@
-import React, { useState, useEffect } from "react";
-// import { MapContainer, TileLayer, Polygon, Popup } from "react-leaflet";
+import React, { useState, useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import axios from "axios";
-import Map from './component/map';
+import Map from "./component/map";
+import { io, Socket } from "socket.io-client";
 
-interface PlotFeature {
+// Define types for the plot data structure
+interface PlotData {
   type: string;
   geometry: {
     type: string;
-    coordinates: number[][][];  
+    coordinates: number[][] | number[][][];
   };
   properties: {
-    id: number;
+    id: string;
     name: string;
-    area: string;
-    type: string;
-    status: string;
-    disroad: string;
-    diswater: string;
-    elephase: number;
+    description?: string;
+    area?: string;
+    type?: string;
+    status?: string;
   };
 }
 
-const App = () => {
-  const [selectedOption, setSelectedOption] = useState("");
-  const [mapKey, setMapKey] = useState(0);
-  const [plotData, setPlotData] = useState<PlotFeature[]>([]);
+const App: React.FC = () => {
+  const [selectedOption, setSelectedOption] = useState<string>(""); // Store selected option (industry type)
+  const [plotData, setPlotData] = useState<PlotData[]>([]); // Store plot data from the server
+  const socketRef = useRef<Socket | null>(null); // Use useRef to store socket instance
 
+  // Create the socket instance only once
+  useEffect(() => {
+    socketRef.current = io("http://localhost:3000"); // Initialize socket here
 
+    // Listen for the "new-plots" event to update the plots when received from the server
+    socketRef.current.on("new-plots", (data: { features: PlotData[] }) => {
+      setPlotData(data.features); // Update plot data in state
+    });
 
-  // Fetch plot data from the server
-  const getMapCoordinates = async () => {
-    try {
-      const response = await axios.get(`http://localhost:3000/get-plots`);
-      // console.log("Plot Data:", response.data.features);
-      setPlotData(response.data.features);  // Assuming response has the correct structure
-    } catch (err) {
-      console.error("Error fetching plot data:", err);
+    // Fetch all plots initially
+    socketRef.current.emit("get-all-plots"); // Request all plots on mount
+    socketRef.current.on("all-plots", (data: { features: PlotData[] }) => {
+      setPlotData(data.features); // Set initial data to state
+    });
+
+    return () => {
+      socketRef.current?.disconnect(); // Cleanup on unmount
+    };
+  }, []); // Empty array ensures this only runs on component mount
+
+  // Emit a request to the server for the selected industry type
+  useEffect(() => {
+    if (selectedOption) {
+      // Emit an event to request filtered plot data for the selected industry type
+      socketRef.current?.emit("get-plots-by-type", selectedOption);
+    } else {
+      socketRef.current?.emit("get-all-plots"); // Fetch all plots if no option is selected
     }
-  };
-
-  // useEffect(() => {
-  //   const map = L.map('map').setView([17.430869662, 76.131551228], 12); // Initial center coordinates
-  //   // getMapCoordinates();
-  // }, []);
+  }, [selectedOption]);
 
   // Dropdown options
-  const options = [
-    "Chemical Industry",
-    "Textile Industry",
-    "IT Industry",
-    "Automotive Industry",
-    "Paper Industry",
-  ];
+  const options: string[] = ["chemical", "textile", "IT", "automobile"];
 
   return (
     <div className="h-screen flex flex-col">
@@ -68,7 +72,7 @@ const App = () => {
               onChange={(e) => setSelectedOption(e.target.value)}
               className="bg-white text-gray-700 rounded-lg p-3 w-72 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="" disabled selected>
+              <option value="" disabled>
                 Select Location
               </option>
               {options.map((option, index) => (
@@ -82,8 +86,8 @@ const App = () => {
       </header>
 
       {/* Map Section */}
-      <Map/>
-      
+      {/* Pass plotData to the Map component */}
+      <Map plotData={plotData} />
     </div>
   );
 };

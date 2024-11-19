@@ -35,8 +35,84 @@ const io = new Server(server, {
   },
 });
 io.on("connection", (socket) => {
-  console.log("a user connected");
+  console.log("A user connected");
+
+  // Fetch all plots when "get-all-plots" is emitted
+  socket.on("get-all-plots", async () => {
+    try {
+      const result = await pool.query(`
+        SELECT id, name, area, type, status, disroad, diswater, elephase, ST_AsGeoJSON(geom) as geom
+        FROM gis_data;
+      `);
+
+      const geojson = {
+        type: "FeatureCollection",
+        features: result.rows.map((row) => ({
+          type: "Feature",
+          geometry: JSON.parse(row.geom),
+          properties: {
+            id: row.id,
+            name: row.name,
+            area: row.area,
+            type: row.type,
+            status: row.status,
+            disroad: row.disroad,
+            diswater: row.diswater,
+            elephase: row.elephase,
+          },
+        })),
+      };
+
+      // Emit all plots back to the client
+      socket.emit("all-plots", geojson);
+    } catch (err) {
+      console.error(err);
+      socket.emit("error", "Error fetching plots.");
+    }
+  });
+
+  // Fetch plots by type
+  socket.on("get-plots-by-type", async (industryType) => {
+    try {
+      const result = await pool.query(
+        `
+        SELECT id, name, area, type, status, disroad, diswater, elephase, ST_AsGeoJSON(geom) as geom
+        FROM gis_data
+        WHERE type = $1;
+        `,
+        [industryType]
+      );
+
+      const geojson = {
+        type: "FeatureCollection",
+        features: result.rows.map((row) => ({
+          type: "Feature",
+          geometry: JSON.parse(row.geom),
+          properties: {
+            id: row.id,
+            name: row.name,
+            area: row.area,
+            type: row.type,
+            status: row.status,
+            disroad: row.disroad,
+            diswater: row.diswater,
+            elephase: row.elephase,
+          },
+        })),
+      };
+
+      // Emit filtered plots back to the client
+      socket.emit("new-plots", geojson);
+    } catch (err) {
+      console.error(err);
+      socket.emit("error", "Error fetching plots.");
+    }
+  });
 });
+
+
+
+
 app.post("/add-plot", async (req, res) => {
   try {
     console.log(req.body);
